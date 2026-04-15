@@ -11,6 +11,9 @@ from evaluation.metrics import evaluate_cnn, evaluate_model
 from predict import predict
 # Nueral Network
 from models.CNN import train_cnn
+# Bayes Model
+from models.baseline import build_naive_bayes_model, train_model
+from predict import predict_sklearn
 # Transformer
 from models.transformer import predict_transformer
 
@@ -40,6 +43,14 @@ def main():
 
     # Other models
     # predict_transformer(SAMPLE_REVIEWS)
+
+
+    # Naive Bayes
+    nb_model = build_naive_bayes_model()
+    nb_model = train_model(nb_model, X_train, y_train)
+
+    evaluate_model(nb_model, X_test, y_test)
+    predict_sklearn(nb_model, SAMPLE_REVIEWS)
 
 
 if __name__ == "__main__":

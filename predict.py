@@ -20,3 +20,22 @@ def predict(model, reviews: list[str]) -> None:
         confidence = max(prob) * 100
         print(f"Review    : {review[:80]}...")
         print(f"Prediction: {label}  (confidence: {confidence:.1f}%)\n")
+
+def predict_sklearn(model, reviews):
+    """Prediction function for sklearn models"""
+
+    print("=" * 50)
+    print("Predictions (Bayes)")
+    print("=" * 50)
+
+    cleaned = [clean_text(r) for r in reviews]
+
+    preds = model.predict(cleaned)
+    probs = model.predict_proba(cleaned)
+
+    for review, pred, prob in zip(reviews, preds, probs):
+        label = "POSITIVE" if pred == 1 else "NEGATIVE"
+        confidence = max(prob) * 100
+
+        print(f"Review    : {review[:80]}...")
+        print(f"Prediction: {label} (confidence: {confidence:.1f}%)\n")
