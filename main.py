@@ -13,7 +13,8 @@ from predict import predict
 from models.CNN import train_cnn
 # Bayes Model
 from models.baseline import build_naive_bayes_model, train_model
-from predict import predict_sklearn
+# Decision Tree
+from models.baseline import build_tree_model
 # Transformer
 from models.transformer import predict_transformer
 
@@ -45,12 +46,28 @@ def main():
     # predict_transformer(SAMPLE_REVIEWS)
 
 
-    # Naive Bayes
+    # Naive Bayes Model
+    print("\n\n=========================")
+    print("NAIVE BAYES MODEL")
+    print("=========================")
+
     nb_model = build_naive_bayes_model()
     nb_model = train_model(nb_model, X_train, y_train)
 
     evaluate_model(nb_model, X_test, y_test)
-    predict_sklearn(nb_model, SAMPLE_REVIEWS)
+    predict(nb_model, SAMPLE_REVIEWS)
+
+
+    # Decision Tree Model
+    print("\n\n=========================")
+    print("DECISION TREE MODEL")
+    print("=========================")
+
+    tree_model = build_tree_model()
+    tree_model = train_model(tree_model, X_train, y_train)
+
+    evaluate_model(tree_model, X_test, y_test)
+    predict(tree_model, SAMPLE_REVIEWS)
 
 
 if __name__ == "__main__":
