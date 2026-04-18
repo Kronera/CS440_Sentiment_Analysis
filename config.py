@@ -11,7 +11,7 @@ RANDOM_STATE = 42
 # Download from: https://nlp.stanford.edu/projects/glove/  (glove.6B.zip)
 # Then point this path at the extracted .txt file, e.g. "glove.6B.100d.txt"
 # Set to None to fall back to random embeddings (original behaviour).
-GLOVE_PATH = "glove.6B.100d.txt"   # <-- update this to your actual path
+GLOVE_PATH = "data/glove.6B.100d.txt"   # <-- update this to your actual path
 GLOVE_DIM  = 100                    # must match the file: 50 / 100 / 200 / 300
 CNN_FREEZE_EPOCHS = 3               # epochs to keep embeddings frozen before fine-tuning
 CNN_EPOCHS        = 10              # more epochs needed when using pretrained embeddings
