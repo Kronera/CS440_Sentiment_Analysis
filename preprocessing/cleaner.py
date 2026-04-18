@@ -1,26 +1,71 @@
-# ================================================
-#  preprocessing/cleaner.py — Text cleaning
-# ================================================
-
 import re
 import pandas as pd
 
-# Preprocessing steps:
-# 1. Remove HTML tags
-# 2. Remove non-alphabetic characters
-# 3. Convert to lowercase
+_nlp = None   # spaCy model (loaded once on first call)
+_STOP_WORDS = None   # spaCy stopword set minus negation words
+
+
+def _get_nlp():
+    """Load spaCy model once and cache it."""
+    global _nlp, _STOP_WORDS
+    if _nlp is None:
+        import spacy
+        _nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
+        _STOP_WORDS = _nlp.Defaults.stop_words - {
+            "not", "no", "nor", "never", "nobody", "nothing",
+            "neither", "nowhere", "hardly", "barely", "scarcely",
+        }
+    return _nlp
+
+_NEGATION_RE = re.compile(
+    r"\b(not|no|never|nor|nobody|nothing|neither|nowhere|hardly|barely|scarcely)\b"
+    r"((?:\s+\w+){1,4})",
+    re.IGNORECASE,
+)
+
+def _apply_negation(text: str) -> str:
+    """Tag words inside negation windows with _NEG suffix."""
+    def _tag(match):
+        trigger = match.group(1)
+        window  = match.group(2)
+        tagged  = re.sub(r"(\w+)", r"\1_NEG", window)
+        return trigger + tagged
+    return _NEGATION_RE.sub(_tag, text)
+
+_KEEP_POS = {"NOUN", "VERB", "ADJ", "ADV"}
+
+
 def clean_text(text: str) -> str:
-    text = re.sub(r"<.*?>", " ", text)       # remove HTML tags
-    text = re.sub(r"[^a-zA-Z\s]", "", text)  # keep only letters
-    text = text.lower().strip()
-    return text
+    import contractions
+
+    nlp = _get_nlp()
+    text = contractions.fix(text)
+    text = re.sub(r"<.*?>", " ", text)
+    text = _apply_negation(text)
+    text = re.sub(r"[^a-zA-Z\s_]", " ", text)
+    
+    tokens = []
+    
+    for token in nlp(text):
+        word = token.text
+
+        if word.endswith("_NEG"):
+            root = word[:-4]
+            doc  = nlp(root)
+            lemma = doc[0].lemma_ if doc else root
+            tokens.append(lemma.lower() + "_NEG")
+        else:
+            if token.pos_ in _KEEP_POS and token.lemma_.lower() not in _STOP_WORDS:
+                tokens.append(token.lemma_.lower())
+
+    return " ".join(tokens).strip()
+
 
 
 def preprocess(df: pd.DataFrame) -> pd.DataFrame:
-    print("Preprocessing")
-
+    print("2-3 Minutes")
     df = df.copy()
     df["clean_review"] = df["review"].apply(clean_text)
-    df["label"] = (df["sentiment"] == "positive").astype(int)
+    df["label"]        = (df["sentiment"] == "positive").astype(int)
 
     return df
