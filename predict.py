@@ -20,3 +20,4 @@ def predict(model, reviews: list[str]) -> None:
         confidence = max(prob) * 100
         print(f"Review    : {review[:80]}...")
         print(f"Prediction: {label}  (confidence: {confidence:.1f}%)\n")
+
