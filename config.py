@@ -1,9 +1,5 @@
-# ================================================
-#  config.py — Central configuration
-# ================================================
-
 # Data
-DATA_PATH   = "C:\\Users\\ayden\\OneDrive\\Desktop\\NLP\\CS440_Sentiment_Analysis\\data\\IMDBDataset.csv"
+DATA_PATH   = "data\\IMDBDataset.csv"
 TEST_SIZE   = 0.2
 RANDOM_STATE = 42
 
