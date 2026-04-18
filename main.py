@@ -23,13 +23,10 @@ def main():
     # Load csv
     df = load_data(DATA_PATH)
 
-    # Preprocess data
     df = preprocess(df)
 
-    # Train/test split
     X_train, X_test, y_train, y_test = split_data(df)
 
-    # Train Neural Network (CNN) with pretrained GloVe embeddings
     cnn_model, vocab = train_cnn(
         list(X_train), list(y_train),
         list(X_test),  list(y_test),
@@ -39,24 +36,10 @@ def main():
         freeze_epochs=CNN_FREEZE_EPOCHS,
     )
 
-    # Evaluate CNN
     evaluate_cnn(cnn_model, vocab, X_test, y_test)
 
-    # Label Reviews — use predict_cnn, not predict (CNN is PyTorch, not sklearn)
     predict_cnn(cnn_model, vocab, SAMPLE_REVIEWS)
 
-    # Other models
-    # predict_transformer(SAMPLE_REVIEWS)
-
-
-    # ── Transformer (DistilBERT fine-tuning) ──────────────────────────────
-    # Fine-tunes DistilBERT on your train split, evaluates on test split,
-    # then runs inference on the sample reviews.
-    # Saves the model to TRANSFORMER_SAVE_DIR — subsequent runs can skip
-    # train_transformer() and call evaluate/predict directly.
-    #
-    # Requires: pip install transformers datasets accelerate
-    # GPU strongly recommended — ~15 min on CPU, ~2 min on a modern GPU.
     train_transformer(X_train, y_train, X_test, y_test)
     evaluate_transformer(X_test, y_test)
     predict_transformer(SAMPLE_REVIEWS)

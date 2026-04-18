@@ -1,7 +1,3 @@
-# ================================================
-#  predict.py — Run inference on new reviews
-# ================================================
-
 import torch
 from preprocessing.cleaner import clean_text
 from models.CNN import encode
