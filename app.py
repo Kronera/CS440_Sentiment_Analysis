@@ -50,6 +50,11 @@ def confidence_bar(value):
     </div>
     """
 
+# =========================
+# SENTIMENT SCORE (FOR UI)
+# =========================
+def sentiment_score(prob_pos):
+    return max(-1, min(1, 2 * prob_pos - 1))
 
 # =========================
 # MODEL PREDICTIONS
@@ -60,7 +65,9 @@ def predict_nb(text):
     prob = max(nb_model.predict_proba([cleaned])[0])
 
     label = "POSITIVE" if pred == 1 else "NEGATIVE"
-    return label, confidence_bar(prob)
+    score = sentiment_score(prob if pred == 1 else -prob)
+
+    return label, confidence_bar(prob), f"Sentiment Score: {score:.2f}"
 
 
 def predict_tree(text):
@@ -69,7 +76,9 @@ def predict_tree(text):
     prob = max(tree_model.predict_proba([cleaned])[0])
 
     label = "POSITIVE" if pred == 1 else "NEGATIVE"
-    return label, confidence_bar(prob)
+    score = sentiment_score(prob if pred == 1 else -prob)
+
+    return label, confidence_bar(prob), f"Sentiment Score: {score:.2f}"
 
 
 def predict_cnn(text):
@@ -84,7 +93,13 @@ def predict_cnn(text):
     label = "POSITIVE" if prob_pos >= 0.5 else "NEGATIVE"
     confidence = max(prob_pos, 1 - prob_pos)
 
-    return label, confidence_bar(confidence)
+    score = sentiment_score(prob_pos)
+
+    return (
+        label,
+        confidence_bar(confidence),
+        f"Sentiment Score: {score:.2f}"
+    )
 
 
 # =========================
@@ -187,22 +202,19 @@ with gr.Blocks(theme=gr.themes.Default()) as demo:
 
             output_conf = gr.HTML()
 
-            gr.Markdown("## Model Information")
+            output_score = gr.Textbox(label="Sentiment Score", interactive=False)
 
-            gr.Markdown(
-                """
-                Naive Bayes: Fast probabilistic model based on word frequency.
-
-                Decision Tree: Rule-based model using feature splits.
-
-                CNN: Deep learning model capturing word context.
-                """
-            )
+            gr.Markdown("""
+            The sentiment score ranges from **-1 to +1**:
+            - +1 = very positive
+            - 0 = neutral
+            - -1 = very negative
+            """)
 
     btn.click(
         fn=predict,
         inputs=[text_input, model_input],
-        outputs=[output_label, output_conf]
+        outputs=[output_label, output_conf, output_score]
     )
 
 

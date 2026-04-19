@@ -23,7 +23,7 @@ from models.transformer import train_transformer, evaluate_transformer, predict_
 # =========================
 # SETTINGS
 # =========================
-TRAIN_MODE = True  # Set to True ONLY when you want to retrain
+TRAIN_MODE = False # Set to True ONLY when you want to retrain
 
 
 # =========================
@@ -43,7 +43,7 @@ def train_all():
     df = load_data(DATA_PATH)
 
     ##### Small sample for faster training during development. Comment out for full dataset.
-    df = df.sample(50, random_state=42)
+    df = df.sample(3000, random_state=42)
 
     df = preprocess(df)
 
