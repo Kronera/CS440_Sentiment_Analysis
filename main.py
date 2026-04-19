@@ -1,3 +1,6 @@
+import os
+import joblib
+import torch
 # ================================================
 #  main.py — Entry point
 # ================================================
@@ -6,27 +9,47 @@ from config import DATA_PATH, SAMPLE_REVIEWS, GLOVE_PATH, GLOVE_DIM, CNN_FREEZE_
 
 from data.loader import load_data, split_data
 from preprocessing.cleaner import preprocess
-from models.baseline import build_model, train_model
 from evaluation.metrics import evaluate_cnn, evaluate_model
 from predict import predict, predict_cnn
-# Nueral Network
-from models.CNN import train_cnn
-# Bayes Model
-from models.baseline import build_naive_bayes_model, train_model
-# Decision Tree
-from models.baseline import build_tree_model
+
+# Models
+from models.CNN import train_cnn, TextCNN
+from models.baseline import build_naive_bayes_model, build_tree_model, train_model
+
 # Transformer
 from models.transformer import train_transformer, evaluate_transformer, predict_transformer
 
 
-def main():
-    # Load csv
+# =========================
+# SETTINGS
+# =========================
+TRAIN_MODE = True  # Set to True ONLY when you want to retrain
+
+
+# =========================
+# FILE PATHS
+# =========================
+CNN_PATH  = "cnn_model.pt"
+NB_PATH   = "nb_model.pkl"
+TREE_PATH = "tree_model.pkl"
+
+
+# =========================
+# TRAINING FUNCTION
+# =========================
+def train_all():
+    print("Training all models...\n")
+
     df = load_data(DATA_PATH)
+
+    ##### Small sample for faster training during development. Comment out for full dataset.
+    df = df.sample(50, random_state=42)
 
     df = preprocess(df)
 
     X_train, X_test, y_train, y_test = split_data(df)
 
+    # ===== CNN =====
     cnn_model, vocab = train_cnn(
         list(X_train), list(y_train),
         list(X_test),  list(y_test),
@@ -36,37 +59,89 @@ def main():
         freeze_epochs=CNN_FREEZE_EPOCHS,
     )
 
-    evaluate_cnn(cnn_model, vocab, X_test, y_test)
+    torch.save({
+        "model_state": cnn_model.state_dict(),
+        "vocab": vocab,
+        "vocab_size": len(vocab)
+    }, CNN_PATH)
 
+    evaluate_cnn(cnn_model, vocab, X_test, y_test)
     predict_cnn(cnn_model, vocab, SAMPLE_REVIEWS)
 
+
+    # ===== TRANSFORMER =====
     train_transformer(X_train, y_train, X_test, y_test)
     evaluate_transformer(X_test, y_test)
     predict_transformer(SAMPLE_REVIEWS)
 
 
-    # Naive Bayes Model
-    print("\n\n=========================")
-    print("NAIVE BAYES MODEL")
-    print("=========================")
+    # ===== NAIVE BAYES =====
+    print("\nNAIVE BAYES MODEL\n")
 
     nb_model = build_naive_bayes_model()
     nb_model = train_model(nb_model, X_train, y_train)
+
+    joblib.dump(nb_model, NB_PATH)
 
     evaluate_model(nb_model, X_test, y_test)
     predict(nb_model, SAMPLE_REVIEWS)
 
 
-    # Decision Tree Model
-    print("\n\n=========================")
-    print("DECISION TREE MODEL")
-    print("=========================")
+    # ===== TREE MODEL =====
+    print("\nTREE MODEL\n")
 
     tree_model = build_tree_model()
     tree_model = train_model(tree_model, X_train, y_train)
 
+    joblib.dump(tree_model, TREE_PATH)
+
     evaluate_model(tree_model, X_test, y_test)
     predict(tree_model, SAMPLE_REVIEWS)
+
+
+# =========================
+# LOAD FUNCTIONS (for GUI)
+# =========================
+def load_cnn():
+    checkpoint = torch.load(CNN_PATH)
+    vocab = checkpoint["vocab"]
+    vocab_size = checkpoint["vocab_size"]
+
+    model = TextCNN(vocab_size)
+    model.load_state_dict(checkpoint["model_state"])
+    model.eval()
+
+    return model, vocab
+
+
+def load_nb():
+    return joblib.load(NB_PATH)
+
+
+def load_tree():
+    return joblib.load(TREE_PATH)
+
+
+# =========================
+# MAIN
+# =========================
+def main():
+    if TRAIN_MODE or not (
+        os.path.exists(CNN_PATH)
+        and os.path.exists(NB_PATH)
+        and os.path.exists(TREE_PATH)
+    ):
+        train_all()
+    else:
+        print("Models already trained. Loading...\n")
+
+        cnn_model, vocab = load_cnn()
+        nb_model = load_nb()
+        tree_model = load_tree()
+
+        predict_cnn(cnn_model, vocab, SAMPLE_REVIEWS)
+        predict(nb_model, SAMPLE_REVIEWS)
+        predict(tree_model, SAMPLE_REVIEWS)
 
 
 if __name__ == "__main__":
