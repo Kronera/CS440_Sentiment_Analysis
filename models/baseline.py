@@ -1,3 +1,5 @@
+# Baseline models for the NLP
+
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -9,6 +11,7 @@ from config import TFIDF_MAX_FEATURES, TFIDF_NGRAM_RANGE, LR_MAX_ITER, LR_C, \
                    GB_N_ESTIMATORS, GB_MAX_DEPTH, GB_LEARNING_RATE, GB_SUBSAMPLE
 
 
+# Build models into the NLP pipeline
 def build_model() -> Pipeline:
     return Pipeline([
         ("tfidf", TfidfVectorizer(
@@ -52,6 +55,6 @@ def build_tree_model() -> Pipeline:
             subsample=GB_SUBSAMPLE,
             max_features="sqrt",
             random_state=42,
-            verbose=1,              # prints progress every 10 trees 
+            verbose=1,
         ))
     ])

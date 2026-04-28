@@ -1,0 +1,31 @@
+{
+  "model": "Naive Bayes",
+  "accuracy": 0.865,
+  "report": {
+    "Negative": {
+      "precision": 0.8604651162790697,
+      "recall": 0.8691275167785235,
+      "f1-score": 0.8647746243739566,
+      "support": 298.0
+    },
+    "Positive": {
+      "precision": 0.8695652173913043,
+      "recall": 0.8609271523178808,
+      "f1-score": 0.8652246256239601,
+      "support": 302.0
+    },
+    "accuracy": 0.865,
+    "macro avg": {
+      "precision": 0.8650151668351871,
+      "recall": 0.8650273345482021,
+      "f1-score": 0.8649996249989583,
+      "support": 600.0
+    },
+    "weighted avg": {
+      "precision": 0.8650455005055612,
+      "recall": 0.865,
+      "f1-score": 0.8650011250031249,
+      "support": 600.0
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "model": "Decision Tree",
+  "accuracy": 0.8633333333333333,
+  "report": {
+    "Negative": {
+      "precision": 0.8802816901408451,
+      "recall": 0.8389261744966443,
+      "f1-score": 0.8591065292096219,
+      "support": 298.0
+    },
+    "Positive": {
+      "precision": 0.8481012658227848,
+      "recall": 0.8874172185430463,
+      "f1-score": 0.8673139158576052,
+      "support": 302.0
+    },
+    "accuracy": 0.8633333333333333,
+    "macro avg": {
+      "precision": 0.864191477981815,
+      "recall": 0.8631716965198453,
+      "f1-score": 0.8632102225336136,
+      "support": 600.0
+    },
+    "weighted avg": {
+      "precision": 0.8640842099007547,
+      "recall": 0.8633333333333333,
+      "f1-score": 0.8632375804891069,
+      "support": 600.0
+    }
+  }
+}

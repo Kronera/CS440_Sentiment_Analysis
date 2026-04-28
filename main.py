@@ -9,21 +9,31 @@ from config import DATA_PATH, SAMPLE_REVIEWS, GLOVE_PATH, GLOVE_DIM, CNN_FREEZE_
 
 from data.loader import load_data, split_data
 from preprocessing.cleaner import preprocess
-from evaluation.metrics import evaluate_cnn, evaluate_model
+from evaluation.metrics import evaluate_cnn, evaluate_model, save_combined_roc_chart
 from predict import predict, predict_cnn
 
 # Models
 from models.CNN import train_cnn, TextCNN
 from models.baseline import build_naive_bayes_model, build_tree_model, train_model
 
-# Transformer
-from models.transformer import train_transformer, evaluate_transformer, predict_transformer
+# Transformer — imported lazily to avoid version conflicts when only using the GUI
+def train_transformer(*args, **kwargs):
+    from models.transformer import train_transformer as _t
+    return _t(*args, **kwargs)
+
+def evaluate_transformer(*args, **kwargs):
+    from models.transformer import evaluate_transformer as _e
+    return _e(*args, **kwargs)
+
+def predict_transformer(*args, **kwargs):
+    from models.transformer import predict_transformer as _p
+    return _p(*args, **kwargs)
 
 
 # =========================
 # SETTINGS
 # =========================
-TRAIN_MODE = False # Set to True ONLY when you want to retrain
+TRAIN_MODE = True # Set to True ONLY when you want to retrain
 
 
 # =========================
@@ -83,7 +93,7 @@ def train_all():
 
     joblib.dump(nb_model, NB_PATH)
 
-    evaluate_model(nb_model, X_test, y_test)
+    evaluate_model(nb_model, X_test, y_test, model_name="Naive Bayes")
     predict(nb_model, SAMPLE_REVIEWS)
 
 
@@ -95,8 +105,11 @@ def train_all():
 
     joblib.dump(tree_model, TREE_PATH)
 
-    evaluate_model(tree_model, X_test, y_test)
+    evaluate_model(tree_model, X_test, y_test, model_name="Decision Tree")
     predict(tree_model, SAMPLE_REVIEWS)
+
+    # Save combined ROC chart for all models
+    save_combined_roc_chart()
 
 
 # =========================
