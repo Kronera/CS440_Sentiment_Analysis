@@ -1,9 +1,6 @@
 import os
 import joblib
 import torch
-# ================================================
-#  main.py — Entry point
-# ================================================
 
 from config import DATA_PATH, SAMPLE_REVIEWS, GLOVE_PATH, GLOVE_DIM, CNN_FREEZE_EPOCHS, CNN_EPOCHS
 
@@ -12,40 +9,30 @@ from preprocessing.cleaner import preprocess
 from evaluation.metrics import evaluate_cnn, evaluate_model, create_ROCChart
 from predict import predict, predict_cnn
 
-# Models
 from models.CNN import train_cnn, TextCNN
 from models.baseline import build_naive_bayes_model, build_tree_model, train_model
 
-# =========================
-# SETTINGS
-# =========================
-TRAIN_MODE = True # Set to True ONLY when you want to retrain
+TRAIN_MODE = True 
 
 
-# =========================
-# FILE PATHS
-# =========================
+
 CNN_PATH  = "cnn_model.pt"
 NB_PATH   = "nb_model.pkl"
 TREE_PATH = "tree_model.pkl"
 
-
-# =========================
-# TRAINING FUNCTION
-# =========================
 def train_all():
-    print("Training all models...\n")
+    print("Training all models\n")
 
     df = load_data(DATA_PATH)
 
-    ##### Small sample for faster training during development. Comment out for full dataset.
+    # Small sample for faster training. Comment out for full dataset.
     df = df.sample(3000, random_state=42)
 
     df = preprocess(df)
 
     X_train, X_test, y_train, y_test = split_data(df)
 
-    # ===== CNN =====
+    # CNN
     cnn_model, vocab = train_cnn(
         list(X_train), list(y_train),
         list(X_test),  list(y_test),
@@ -65,13 +52,10 @@ def train_all():
     predict_cnn(cnn_model, vocab, SAMPLE_REVIEWS)
 
 
-    # ===== TRANSFORMER =====
-    train_transformer(X_train, y_train, X_test, y_test)
-    evaluate_transformer(X_test, y_test)
-    predict_transformer(SAMPLE_REVIEWS)
 
 
-    # ===== NAIVE BAYES =====
+
+    # Naive Bayes
     print("\nNAIVE BAYES MODEL\n")
 
     nb_model = build_naive_bayes_model()
@@ -83,7 +67,7 @@ def train_all():
     predict(nb_model, SAMPLE_REVIEWS)
 
 
-    # ===== TREE MODEL =====
+    # Gradient Boost
     print("\nTREE MODEL\n")
 
     tree_model = build_tree_model()
@@ -93,14 +77,10 @@ def train_all():
 
     evaluate_model(tree_model, X_test, y_test, model_name="Decision Tree")
     predict(tree_model, SAMPLE_REVIEWS)
-
-    # Save combined ROC chart for all models
     create_ROCChart()
 
 
-# =========================
-# LOAD FUNCTIONS (for GUI)
-# =========================
+#L Loading app GUI 
 def load_cnn():
     checkpoint = torch.load(CNN_PATH)
     vocab = checkpoint["vocab"]
@@ -121,9 +101,6 @@ def load_tree():
     return joblib.load(TREE_PATH)
 
 
-# =========================
-# MAIN
-# =========================
 def main():
     if TRAIN_MODE or not (
         os.path.exists(CNN_PATH)

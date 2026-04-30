@@ -11,6 +11,10 @@ GLOVE_DIM  = 100
 CNN_FREEZE_EPOCHS = 3
 CNN_EPOCHS = 10 
 
+# Logistic Regression
+LR_MAX_ITER = 1000
+LR_C = 1.0
+
 # TF-IDF
 TFIDF_MAX_FEATURES = 20_000
 TFIDF_NGRAM_RANGE  = (1, 2)
@@ -25,3 +29,9 @@ GB_N_ESTIMATORS  = 200
 GB_MAX_DEPTH     = 4
 GB_LEARNING_RATE = 0.1
 GB_SUBSAMPLE     = 0.8
+
+SAMPLE_REVIEWS = [
+    "This film was an absolute masterpiece. The acting was superb and the story kept me engaged throughout.",
+    "Terrible movie. Boring plot, bad acting, and a complete waste of two hours. Do not recommend.",
+    "It was okay, nothing special. Some parts were good but overall pretty forgettable.",
+]
