@@ -24,7 +24,7 @@ def build_model() -> Pipeline:
         )),
     ])
 
-
+# Training models into the pipeline
 def train_model(model: Pipeline, X_train, y_train) -> Pipeline:
     print("Training")
 
@@ -32,7 +32,7 @@ def train_model(model: Pipeline, X_train, y_train) -> Pipeline:
 
     return model
 
-
+# Build the Naive Bayes model
 def build_naive_bayes_model() -> Pipeline:
     return Pipeline([
         ("tfidf", TfidfVectorizer(
@@ -42,6 +42,7 @@ def build_naive_bayes_model() -> Pipeline:
         ("clf", ComplementNB(alpha=0.1))
     ])
 
+# Build Gradient Boost model
 def build_tree_model() -> Pipeline:
     return Pipeline([
         ("tfidf", TfidfVectorizer(

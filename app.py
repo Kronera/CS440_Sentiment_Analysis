@@ -8,32 +8,23 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import random as _random
 
 from preprocessing.cleaner import clean_text
 from models.CNN import encode
 from main import load_cnn, load_nb, load_tree
 
 
-# =========================
-# LOAD MODELS
-# =========================
-print("Loading models...")
+# Load models
 cnn_model, vocab = load_cnn()
-nb_model         = load_nb()
-tree_model       = load_tree()
-print("Models loaded.")
+nb_model = load_nb()
+tree_model = load_tree()
 
-
-
-# =========================
-# METRICS LOADER
-# =========================
+# Load metrics
 _METRICS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "metrics")
-
 
 def _fmt(val, decimals=3):
     return f"{val:.{decimals}f}"
-
 
 def _load_metrics_html():
     import json as _json
@@ -43,8 +34,8 @@ def _load_metrics_html():
         return "<p style='color:#9ca3af;font-family:sans-serif;'>No metrics found. Run <code>main.py</code> to generate metrics.</p>"
 
     models = [
-        ("CNN",           "cnn"),
-        ("Naive Bayes",   "naive_bayes"),
+        ("CNN", "cnn"),
+        ("Naive Bayes", "naive_bayes"),
         ("Decision Tree", "decision_tree"),
     ]
 
@@ -122,7 +113,7 @@ def _load_metrics_html():
             "</div></div>"
         )
 
-    # Add combined ROC chart at the top
+    # Add ROC chart to the app
     roc_path = os.path.join(_METRICS_DIR, "roc_combined.png")
     roc_html = ""
     if os.path.isfile(roc_path):
@@ -140,9 +131,7 @@ def _load_metrics_html():
     final = roc_html + html
     return final if final.strip() else "<p style='color:#9ca3af;'>No metrics files found in the metrics/ folder.</p>"
 
-# =========================
-# NAIVE BAYES KEYWORD ENGINE
-# =========================
+# Naive Bayes finding keywords inside the interview
 def _get_nb_word_scores():
     feature_names = nb_model.named_steps["tfidf"].get_feature_names_out()
     log_probs     = nb_model.named_steps["clf"].feature_log_prob_
@@ -150,7 +139,6 @@ def _get_nb_word_scores():
     return dict(zip(feature_names, scores))
 
 _NB_SCORES = _get_nb_word_scores()
-
 
 def _highlight_review(raw_text):
     cleaned_tokens = clean_text(raw_text).split()
@@ -185,7 +173,7 @@ def _highlight_review(raw_text):
     parts = re.findall(r"\w+|[^\w]", raw_text)
     return "".join(_word_html(p) if re.match(r"\w+", p) else p for p in parts)
 
-
+# Top keywords found by the Bayes model
 def _top_keywords(raw_text, n=5):
     cleaned_tokens = clean_text(raw_text).split()
     found = {}
@@ -198,7 +186,6 @@ def _top_keywords(raw_text, n=5):
                 found[base] = flipped
     sorted_words = sorted(found.items(), key=lambda x: x[1], reverse=True)
     return [(w,s) for w,s in sorted_words if s>0][:n], [(w,s) for w,s in sorted_words if s<0][-n:][::-1]
-
 
 def _keywords_html(top_pos, top_neg):
     def pill(word, score, color):
@@ -220,9 +207,7 @@ def _keywords_html(top_pos, top_neg):
     </div>"""
 
 
-# =========================
-# SHARED HELPERS
-# =========================
+# Helper functions
 def sentiment_score(prob_pos):
     return max(-1, min(1, 2 * prob_pos - 1))
 
@@ -234,7 +219,6 @@ def _run_cnn(text):
     with torch.no_grad():
         prob_pos = torch.sigmoid(cnn_model(x)).item()
     return ("POSITIVE" if prob_pos >= 0.5 else "NEGATIVE"), prob_pos
-
 
 def _run_model(text, model_name):
     cleaned = clean_text(text)
@@ -265,7 +249,7 @@ def _review_card_html(label, prob_pos, stars, highlighted_text, keywords_html, d
     disagree_badge = (
         '<span title="CNN and Decision Tree disagree on this review — may contain mixed sentiment" '
         'style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:0.8em;'
-        'font-weight:600;padding:3px 10px;border-radius:12px;">⚠ Mixed Signals</span>'
+        'font-weight:600;padding:3px 10px;border-radius:12px;">Ambiguous Review</span>'
         if disagrees else ""
     )
     return f"""
@@ -273,8 +257,7 @@ def _review_card_html(label, prob_pos, stars, highlighted_text, keywords_html, d
       <div style="padding:16px;background:#f9fafb;border-radius:14px;
                   border:1px solid #e5e7eb;margin-bottom:12px;">
         <div style="font-size:0.75em;color:#6b7280;font-weight:600;
-                    text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">CNN · Sentiment</div>
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+       <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
           <span style="background:{label_bg};color:white;font-size:1.05em;
                        font-weight:700;padding:5px 18px;border-radius:20px;">{label}</span>
           <span style="font-size:1.2em;color:#f59e0b;letter-spacing:2px;">{star_str}</span>
@@ -308,9 +291,8 @@ def _review_card_html(label, prob_pos, stars, highlighted_text, keywords_html, d
       <div style="padding:16px;background:#f9fafb;border-radius:14px;border:1px solid #e5e7eb;">
         <div style="font-size:0.75em;color:#6b7280;font-weight:600;
                     text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">
-          Naive Bayes · Key Signals</div>
+          Key Words</div>
         <div style="font-size:0.78em;color:#9ca3af;margin-bottom:8px;">
-          Words highlighted by sentiment strength · hover for score</div>
         <div style="line-height:1.9;font-size:0.95em;padding:10px;
                     background:white;border-radius:8px;border:1px solid #e5e7eb;">
           {highlighted_text}
@@ -320,18 +302,15 @@ def _review_card_html(label, prob_pos, stars, highlighted_text, keywords_html, d
     </div>"""
 
 
-# =========================
-# BUSINESS INDEX
-# (loaded once from yelp_business.JSON)
-# =========================
-_business_index = {}   # business_id -> {name, city, state, stars, review_count}
+# Loading business data from the yelp JSON
+# business_id -> {name, city, state, stars, review_count}
+_business_index = {}
 _business_path  = ""
-
 
 def _load_business_index(business_json_path):
     global _business_index, _business_path
     if _business_path == business_json_path and _business_index:
-        return  # already loaded
+        return
     index = {}
     with open(business_json_path, "r", encoding="utf-8") as f:
         for line in f:
@@ -354,9 +333,8 @@ def _load_business_index(business_json_path):
     _business_index = index
     _business_path  = business_json_path
 
-
+# Load all Yelp businesses for display inside the app
 def _build_all_business_choices(business_json_path):
-    """Load all businesses from JSON and return sorted dropdown choices."""
     if not os.path.isfile(business_json_path):
         return []
     _load_business_index(business_json_path)
@@ -367,32 +345,23 @@ def _build_all_business_choices(business_json_path):
     choices.sort()
     return choices
 
-# Pre-load a random sample of 500 businesses at startup
-import random as _random
+# Pre-load a random sample of 500 businesses at startup for ease of demo
 _DEFAULT_BUSINESS_JSON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "yelp_business.JSON")
-print("Loading business index...")
 _ALL_BUSINESS_CHOICES = _build_all_business_choices(_DEFAULT_BUSINESS_JSON)
 _random.seed(42)
 _ALL_BUSINESS_CHOICES = sorted(_random.sample(_ALL_BUSINESS_CHOICES, min(500, len(_ALL_BUSINESS_CHOICES))))
-print(f"Sampled {len(_ALL_BUSINESS_CHOICES):,} businesses.")
 
-
+# Extracting business id from selected business in the app GUI
 def _extract_bid(dropdown_value):
-    """Pull business_id out of the dropdown label string."""
     if not dropdown_value:
         return None
     m = re.search(r"\[([^\]]+)\]$", dropdown_value)
     return m.group(1) if m else None
 
-
-# =========================
-# REVIEW CACHE
-# =========================
 _reviews = []
 
-
+# Loading Yelp reviews for the associated business in the app
 def _load_business_reviews(review_json_path, business_id):
-    """Load ALL reviews for a specific business from yelp_review.JSON."""
     reviews = []
     with open(review_json_path, "r", encoding="utf-8") as f:
         for line in f:
@@ -411,7 +380,7 @@ def _load_business_reviews(review_json_path, business_id):
             reviews.append({"text": text, "stars": obj.get("stars", 0)})
     return reviews
 
-
+# Building app GUI
 def _render(idx):
     if not _reviews:
         return "<p style='color:#6b7280'>Load a business first.</p>", idx, 0, gr.update()
@@ -429,9 +398,11 @@ def _render(idx):
     return card, idx, total, gr.update(value=idx + 1)
 
 
-# =========================
-# BUSINESS ANALYSIS
-# =========================
+# Analzying sentiment for individual businesses
+# Green -> Positive
+# Red -> Negative
+# Blue -> Ambiguous
+# A mix of the three colors is used for words depending on their respective sentiment score
 def _make_charts(df, business_name, model_name):
     import pandas as pd
     POS, NEG, IND = "#22c55e", "#ef4444", "#4f46e5"
@@ -445,7 +416,6 @@ def _make_charts(df, business_name, model_name):
     n_pos = (df["prediction"] == "POSITIVE").sum()
     n_neg = len(df) - n_pos
 
-    # Donut
     ax = axes[0, 0]
     _, _, ats = ax.pie([n_pos, n_neg], labels=["Positive", "Negative"],
                        colors=[POS, NEG], autopct="%1.1f%%", startangle=90,
@@ -455,7 +425,7 @@ def _make_charts(df, business_name, model_name):
         at.set_fontsize(10); at.set_fontweight("bold"); at.set_color("white")
     ax.set_title("Positive vs Negative", fontsize=11, fontweight="bold", color="#374151", pad=10)
 
-    # Star bar
+    # Review stars
     ax = axes[0, 1]
     x = np.arange(1, 6); w = 0.38
     ax.bar(x-w/2, [(df[df["stars"]==s]["prediction"]=="POSITIVE").sum() for s in range(1,6)],
@@ -466,7 +436,7 @@ def _make_charts(df, business_name, model_name):
     ax.set_title("Predictions by Star Rating", fontsize=11, fontweight="bold", color="#374151", pad=10)
     ax.legend(fontsize=9); ax.spines[["top","right"]].set_visible(False)
 
-    # Score histogram
+    # Histogram
     ax = axes[1, 0]
     scores = df["score"].values
     bins   = np.linspace(-1, 1, 21)
@@ -478,7 +448,7 @@ def _make_charts(df, business_name, model_name):
     ax.set_title("Score Distribution", fontsize=11, fontweight="bold", color="#374151", pad=10)
     ax.legend(fontsize=9); ax.spines[["top","right"]].set_visible(False)
 
-    # Avg confidence
+    # Average confidence for sentiment for the selected business
     ax = axes[1, 1]
     cp = df.loc[df["prediction"]=="POSITIVE","confidence"].mean()
     cn = df.loc[df["prediction"]=="NEGATIVE","confidence"].mean()
@@ -513,7 +483,7 @@ def analyze_business(dropdown_value, review_json_path, bulk_model):
 
     business_name = _business_index.get(bid, {}).get("name", bid)
 
-    # ── Load all reviews for this business ────────────────────────────────────
+    # Load all Yelp reviews for the selected business
     print(f"Loading reviews for: {business_name} ({bid})")
     all_reviews = _load_business_reviews(review_json_path, bid)
 
@@ -521,11 +491,11 @@ def analyze_business(dropdown_value, review_json_path, bulk_model):
         msg = f"<p style='color:#f59e0b'>No reviews found for <strong>{business_name}</strong>.</p>"
         return msg, None, msg, "—", 0, 0, gr.update(value=1, maximum=1)
 
-    # ── Bulk sentiment analysis ───────────────────────────────────────────────
+    # Analzying and displaying sentiment analysis
     results = []
     for r in all_reviews:
         if r["stars"] == 3:
-            continue  # skip ambiguous for bulk stats
+            continue 
         label, prob_pos = _run_model(r["text"], "CNN")
         results.append({"stars": r["stars"], "prediction": label,
                          "confidence": max(prob_pos, 1-prob_pos),
@@ -571,7 +541,7 @@ def analyze_business(dropdown_value, review_json_path, bulk_model):
 
     charts = _make_charts(df, business_name, bulk_model)
 
-    # ── Load reviews into browser (all stars, not just non-3) ─────────────────
+    # Loading all reviews into the app GUI
     _reviews = all_reviews
     total_r  = len(_reviews)
     card, idx, _, jump = _render(0)
@@ -587,11 +557,8 @@ def _nav(idx, total, direction=0, jump=None):
     return card, f"Review {idx+1} of {total}", idx, total, jump_upd
 
 
-# =========================
-# BUSINESS NAVIGATION
-# =========================
-def _biz_show(idx):
-    """Return display label and index for a given business list position."""
+# Display classification label and index for the business
+def _bis_display(idx):
     if not _ALL_BUSINESS_CHOICES:
         return "No businesses loaded", 0, len(_ALL_BUSINESS_CHOICES), gr.update(value=1)
     idx   = max(0, min(idx, len(_ALL_BUSINESS_CHOICES) - 1))
@@ -601,24 +568,21 @@ def _biz_show(idx):
 
 
 def biz_prev(idx, total):
-    return _biz_show(int(idx) - 1)
+    return _bis_display(int(idx) - 1)
 
 def biz_next(idx, total):
-    return _biz_show(int(idx) + 1)
+    return _bis_display(int(idx) + 1)
 
 def biz_jump(num, total):
-    return _biz_show(int(num) - 1)
+    return _bis_display(int(num) - 1)
 
-
+# Wrapper for business choice and run analysis
 def analyze_selected(biz_idx, review_json_path, bulk_model):
-    """Wrapper: pull the business choice by index and run analysis."""
     idx = max(0, min(int(biz_idx), len(_ALL_BUSINESS_CHOICES) - 1))
     return analyze_business(_ALL_BUSINESS_CHOICES[idx], review_json_path, bulk_model)
 
 
-# =========================
-# UI
-# =========================
+# Creating and formating the GUI
 with gr.Blocks(theme=gr.themes.Default()) as demo:
 
     gr.HTML("""<style>
@@ -629,42 +593,41 @@ with gr.Blocks(theme=gr.themes.Default()) as demo:
 
     gr.Markdown("# Yelp Business Sentiment Analyzer")
 
-    # ── Collapsible model metrics panel ──────────────────────────────────────
+    # Creating model metrics panel
     with gr.Accordion("Model Metrics", open=False):
         gr.HTML(_load_metrics_html())
 
-    # ── File paths (hidden, resolved automatically from data/ folder) ──────────
+    # JSON filepaths 
     _data_dir    = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
     review_json  = gr.State(value=os.path.join(_data_dir, "yelp_review.JSON"))
     business_json = gr.State(value=os.path.join(_data_dir, "yelp_business.JSON"))
 
     bulk_model = gr.State(value="CNN")
 
-    # ── Business navigator ───────────────────────────────────────────────────
+    # Business GUI
     gr.Markdown("### Select a Business")
     biz_current_idx = gr.State(value=0)
     biz_total       = gr.State(value=len(_ALL_BUSINESS_CHOICES))
 
     with gr.Row():
-        biz_prev_btn    = gr.Button("◀  Previous", variant="primary", scale=1)
+        biz_prev_btn    = gr.Button("< Previous", variant="primary", scale=1)
         biz_counter_out = gr.Textbox(
             value=_ALL_BUSINESS_CHOICES[0] if _ALL_BUSINESS_CHOICES else "No businesses loaded",
             show_label=False, interactive=False, scale=4
         )
-        biz_next_btn    = gr.Button("Next  ▶", variant="primary", scale=1)
+        biz_next_btn    = gr.Button("Next >", variant="primary", scale=1)
 
     analyze_btn = gr.Button("Analyze Selected Business", variant="primary")
 
-    # ── Business report ───────────────────────────────────────────────────────
+    # Business report GUI
     gr.Markdown("## Business Report")
     biz_summary = gr.HTML("<p style='color:#9ca3af'>Search for a business and click Analyze.</p>")
-    biz_charts  = gr.State()  # charts disabled
+    biz_charts  = gr.State()
 
     gr.Markdown("---")
 
-    # ── Review browser ────────────────────────────────────────────────────────
+    # Reviews GUI
     gr.Markdown("## Review Browser")
-    gr.Markdown("CNN classifies each review · Naive Bayes highlights key sentiment words")
 
     current_idx = gr.State(value=0)
     total_count = gr.State(value=0)
@@ -672,20 +635,19 @@ with gr.Blocks(theme=gr.themes.Default()) as demo:
     review_card = gr.HTML()
 
     with gr.Row():
-        prev_btn    = gr.Button("◀  Previous", variant="primary", scale=1)
-        counter_out = gr.Textbox(value="Select and analyze a business to begin",
+        prev_btn    = gr.Button("< Previous", variant="primary", scale=1)
+        counter_out = gr.Textbox(value="Select a business to begin",
                                   show_label=False, interactive=False, scale=2)
-        next_btn    = gr.Button("Next  ▶", variant="primary", scale=1)
+        next_btn    = gr.Button("Next >", variant="primary", scale=1)
 
     jump_num = gr.State(value=1)
     nav_outs = [review_card, counter_out, current_idx, total_count, jump_num]
 
-    # Wire up business navigation
+    # Create business navigation
     biz_nav_outs = [biz_counter_out, biz_current_idx, biz_total]
 
     biz_prev_btn.click(fn=biz_prev, inputs=[biz_current_idx, biz_total], outputs=biz_nav_outs)
     biz_next_btn.click(fn=biz_next, inputs=[biz_current_idx, biz_total], outputs=biz_nav_outs)
-    # Wire up analyze
     analyze_btn.click(
         fn=analyze_selected,
         inputs=[biz_current_idx, review_json, bulk_model],
@@ -693,7 +655,6 @@ with gr.Blocks(theme=gr.themes.Default()) as demo:
                  current_idx, total_count, jump_num]
     )
 
-    # Navigation
     prev_btn.click(fn=lambda i,t: _nav(i,t,direction=-1),
                    inputs=[current_idx, total_count], outputs=nav_outs)
     next_btn.click(fn=lambda i,t: _nav(i,t,direction=1),

@@ -9,26 +9,12 @@ from config import DATA_PATH, SAMPLE_REVIEWS, GLOVE_PATH, GLOVE_DIM, CNN_FREEZE_
 
 from data.loader import load_data, split_data
 from preprocessing.cleaner import preprocess
-from evaluation.metrics import evaluate_cnn, evaluate_model, save_combined_roc_chart
+from evaluation.metrics import evaluate_cnn, evaluate_model, create_ROCChart
 from predict import predict, predict_cnn
 
 # Models
 from models.CNN import train_cnn, TextCNN
 from models.baseline import build_naive_bayes_model, build_tree_model, train_model
-
-# Transformer — imported lazily to avoid version conflicts when only using the GUI
-def train_transformer(*args, **kwargs):
-    from models.transformer import train_transformer as _t
-    return _t(*args, **kwargs)
-
-def evaluate_transformer(*args, **kwargs):
-    from models.transformer import evaluate_transformer as _e
-    return _e(*args, **kwargs)
-
-def predict_transformer(*args, **kwargs):
-    from models.transformer import predict_transformer as _p
-    return _p(*args, **kwargs)
-
 
 # =========================
 # SETTINGS
@@ -109,7 +95,7 @@ def train_all():
     predict(tree_model, SAMPLE_REVIEWS)
 
     # Save combined ROC chart for all models
-    save_combined_roc_chart()
+    create_ROCChart()
 
 
 # =========================

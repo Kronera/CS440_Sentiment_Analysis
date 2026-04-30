@@ -1,8 +1,3 @@
-# ================================================
-#  evaluation/metrics.py — Evaluate model performance
-#  Now also saves metrics to disk for display in app.py
-# ================================================
-
 import json
 import os
 
@@ -17,18 +12,16 @@ from sklearn.metrics import (
     confusion_matrix,
     accuracy_score,
     roc_curve,
-    roc_auc_score,
-)
+    roc_auc_score,)
 
+# Directory to deposit model metrics for display in the app
 _METRICS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "metrics")
-
 
 def _ensure_dir():
     os.makedirs(_METRICS_DIR, exist_ok=True)
 
-
+# Create and save a confusion matrix for a given model
 def _save_confusion_matrix(y_true, y_pred, model_name):
-    """Save confusion matrix as a PNG to the metrics folder."""
     _ensure_dir()
     cm = confusion_matrix(y_true, y_pred)
     fig, ax = plt.subplots(figsize=(5, 4))
@@ -60,9 +53,8 @@ def _save_confusion_matrix(y_true, y_pred, model_name):
     plt.close(fig)
     return path
 
-
+# Storing model metrics into a JSON
 def _save_metrics_json(model_name, accuracy, report_dict):
-    """Save accuracy + classification report to a JSON file."""
     _ensure_dir()
     data = {"model": model_name, "accuracy": accuracy, "report": report_dict}
     path = os.path.join(_METRICS_DIR, f"{model_name.lower().replace(' ', '_')}_metrics.json")
@@ -70,23 +62,21 @@ def _save_metrics_json(model_name, accuracy, report_dict):
         json.dump(data, f, indent=2)
     return path
 
-
-def _save_roc_data(model_name, fpr, tpr, auc_score):
-    """Save ROC curve data (fpr, tpr, auc) for later combined plotting."""
+# Saving ROC data for display
+def roc_data(model_name, fpr, tpr, auc_score):
     _ensure_dir()
     data = {
-        "model":     model_name,
-        "fpr":       list(fpr),
-        "tpr":       list(tpr),
+        "model": model_name,
+        "fpr": list(fpr),
+        "tpr": list(tpr),
         "auc_score": auc_score,
     }
     path = os.path.join(_METRICS_DIR, f"{model_name.lower().replace(' ', '_')}_roc.json")
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
 
-
-def save_combined_roc_chart():
-    """Load all saved ROC data and save a combined PNG with all 3 models overlaid."""
+# Load and create the ROC curve graphs
+def create_ROCChart():
     from sklearn.metrics import auc as _auc
     _ensure_dir()
 
@@ -133,7 +123,7 @@ def save_combined_roc_chart():
     plt.close(fig)
     print(f"Combined ROC chart saved to {out_path}")
 
-
+# Evaluate individual models
 def evaluate_model(model, X_test, y_test, model_name="Model") -> None:
     print(f"STEP 5: Evaluating {model_name}")
     preds = model.predict(X_test)
@@ -152,19 +142,19 @@ def evaluate_model(model, X_test, y_test, model_name="Model") -> None:
         prob_pos = model.predict_proba(X_test)[:, 1]
         fpr, tpr, _ = roc_curve(y_test, prob_pos)
         auc_score   = roc_auc_score(y_test, prob_pos)
-        _save_roc_data(model_name, fpr, tpr, auc_score)
+        roc_data(model_name, fpr, tpr, auc_score)
         print(f"AUC: {auc_score:.4f}")
     except Exception as e:
         print(f"Could not compute ROC for {model_name}: {e}")
 
     print(f"Metrics saved for {model_name}.\n")
 
-
+# Specialized method to evaluatte CNN
 def evaluate_cnn(model, vocab, X_test, y_test, batch_size=64) -> None:
     from models.CNN import ReviewDataset
 
     model_name = "CNN"
-    print(f"Evaluating {model_name}")
+    print(f"Evaluating: {model_name}")
 
     dataset = ReviewDataset(list(X_test), list(y_test), vocab)
     loader  = DataLoader(dataset, batch_size=batch_size)
@@ -189,7 +179,7 @@ def evaluate_cnn(model, vocab, X_test, y_test, batch_size=64) -> None:
     _save_metrics_json(model_name, acc, report)
     _save_confusion_matrix(all_labels, all_preds, model_name)
 
-    # ROC — collect raw sigmoid probabilities
+    # ROC — raw sigmoid probabilities
     all_probs = []
     with torch.no_grad():
         dataset2 = ReviewDataset(list(X_test), list(y_test), vocab)
@@ -202,6 +192,6 @@ def evaluate_cnn(model, vocab, X_test, y_test, batch_size=64) -> None:
 
     fpr, tpr, _ = roc_curve(all_labels, all_probs)
     auc_score   = roc_auc_score(all_labels, all_probs)
-    _save_roc_data(model_name, fpr, tpr, auc_score)
+    roc_data(model_name, fpr, tpr, auc_score)
     print(f"AUC: {auc_score:.4f}")
     print(f"Metrics saved for {model_name}.\n")

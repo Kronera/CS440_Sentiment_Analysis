@@ -1,7 +1,3 @@
-# ================================================
-#  data/loader.py — Load and split the dataset
-# ================================================
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -20,11 +16,10 @@ def split_data(df: pd.DataFrame, test_size: float = TEST_SIZE, random_state: int
         df["label"],
         test_size=test_size,
         random_state=random_state,
-        stratify=df["label"],
-    )
+        stratify=df["label"],)
 
-    print(f"Train samples : {len(X_train)}")
-    print(f"Test  samples : {len(X_test)}")
+    print(f"Train samples: {len(X_train)}")
+    print(f"Test  samples: {len(X_test)}")
     print()
 
     return X_train, X_test, y_train, y_test

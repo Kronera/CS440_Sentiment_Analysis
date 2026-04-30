@@ -1,12 +1,11 @@
 import re
 import pandas as pd
 
-_nlp = None   # spaCy model (loaded once on first call)
-_STOP_WORDS = None   # spaCy stopword set minus negation words
+_nlp = None
+_STOP_WORDS = None
 
-
+# Load spaCy model and cache it
 def _get_nlp():
-    """Load spaCy model once and cache it."""
     global _nlp, _STOP_WORDS
     if _nlp is None:
         import spacy
@@ -17,14 +16,14 @@ def _get_nlp():
         }
     return _nlp
 
+# Negations stored for the NLP
 _NEGATION_RE = re.compile(
     r"\b(not|no|never|nor|nobody|nothing|neither|nowhere|hardly|barely|scarcely)\b"
     r"((?:\s+\w+){1,4})",
-    re.IGNORECASE,
-)
+    re.IGNORECASE,)
 
+# Find and flag negation words with the _NEG suffix
 def _apply_negation(text: str) -> str:
-    """Tag words inside negation windows with _NEG suffix."""
     def _tag(match):
         trigger = match.group(1)
         window  = match.group(2)
@@ -34,7 +33,7 @@ def _apply_negation(text: str) -> str:
 
 _KEEP_POS = {"NOUN", "VERB", "ADJ", "ADV"}
 
-
+# Cleaning review text for use inside the models
 def clean_text(text: str) -> str:
     import contractions
 
@@ -60,12 +59,10 @@ def clean_text(text: str) -> str:
 
     return " ".join(tokens).strip()
 
-
-
 def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     print("2-3 Minutes")
     df = df.copy()
     df["clean_review"] = df["review"].apply(clean_text)
-    df["label"]        = (df["sentiment"] == "positive").astype(int)
+    df["label"] = (df["sentiment"] == "positive").astype(int)
 
     return df
