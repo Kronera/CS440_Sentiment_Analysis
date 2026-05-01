@@ -14,8 +14,7 @@ from models.baseline import build_naive_bayes_model, build_tree_model, train_mod
 
 TRAIN_MODE = True 
 
-
-
+# Creating pt and pkl files for the app to run on
 CNN_PATH  = "cnn_model.pt"
 NB_PATH   = "nb_model.pkl"
 TREE_PATH = "tree_model.pkl"
@@ -50,10 +49,6 @@ def train_all():
 
     evaluate_cnn(cnn_model, vocab, X_test, y_test)
     predict_cnn(cnn_model, vocab, SAMPLE_REVIEWS)
-
-
-
-
 
     # Naive Bayes
     print("\nNAIVE BAYES MODEL\n")
@@ -109,8 +104,6 @@ def main():
     ):
         train_all()
     else:
-        print("Models already trained. Loading...\n")
-
         cnn_model, vocab = load_cnn()
         nb_model = load_nb()
         tree_model = load_tree()
